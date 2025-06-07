@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Invoice - Spectacle Receipt</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    .container { max-width: 800px; margin: auto; border: 1px solid #999; padding: 30px; box-shadow: 0 0 10px #ccc; }
+    .header { text-align: center; }
+    .header img { width: 100px; }
+    .header h1 { margin-bottom: 5px; }
+    .header p { margin: 2px 0; }
+    .section { margin-top: 20px; }
+    .section h2 { margin-bottom: 10px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #333; padding: 8px; text-align: left; }
+    th { background-color: #f4f4f4; }
+    .total { text-align: right; font-weight: bold; padding-top: 10px; }
+    .note { margin-top: 30px; font-size: 14px; color: #555; }
+    .signature { text-align: right; margin-top: 50px; }
+    button {
+      margin-top: 30px;
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="receipt">
+    <div class="header">
+      <img src="https://via.placeholder.com/100x100.png?text=Logo" alt="Logo">
+      <h1>Spectacle Prescription Invoice</h1>
+      <p>Shop-29(Basement), Buddh Bazar, Near Ramabai Degree College</p>
+      <p>Station Road, Gajraula 244235 | Ph: 7599015988</p>
+    </div>
+
+    <div class="section">
+      <h2>Customer Details</h2>
+      <p><strong>Name:</strong> <span id="name"></span></p>
+      <p><strong>Age:</strong> <span id="age"></span> &nbsp;&nbsp; <strong>Gender:</strong> <span id="gender"></span></p>
+      <p><strong>Contact:</strong> <span id="contact"></span> &nbsp;&nbsp; <strong>Date:</strong> <span id="date"></span></p>
+      <p><strong>Order No:</strong> <span id="orderNo">#AUTO</span></p>
+    </div>
+
+    <div class="section">
+      <h2>Prescription</h2>
+      <table>
+        <tr><th></th><th>SPH</th><th>CYL</th><th>AXIS</th><th>ADD</th><th>V/N</th></tr>
+        <tr><td>Right Eye</td><td id="rsph"></td><td id="rcyl"></td><td id="raxis"></td><td id="radd"></td><td id="rvn"></td></tr>
+        <tr><td>Left Eye</td><td id="lsph"></td><td id="lcyl"></td><td id="laxis"></td><td id="ladd"></td><td id="lvn"></td></tr>
+        <tr><td colspan="6"><strong>PD:</strong> <span id="pd">58</span></td></tr>
+      </table>
+    </div>
+
+    <div class="section">
+      <h2>Products Ordered</h2>
+      <table id="productTable">
+        <tr><th>S. No</th><th>Product</th><th>Quantity</th><th>Amount (₹)</th></tr>
+      </table>
+      <p class="total">Total Amount: ₹<span id="totalAmount">0</span></p>
+    </div>
+
+    <div class="signature">
+      <p>Signature</p>
+    </div>
+
+    <div class="note">
+      Kindly get your eyesight checkup within 6 months.<br>
+      Prescription is valid only for 3 months from the day of consultation.
+    </div>
+
+    <button onclick="downloadPDF()">Download PDF</button>
+  </div>
+
+  <script>
+    window.onmessage = function(event) {
+      if (event.data.startsWith("populateReceipt(")) {
+        const data = JSON.parse(event.data.replace("populateReceipt(", "").replace(");", ""));
+        populateReceipt(data);
+      }
+    };
+
+    function populateReceipt(data) {
+      document.getElementById('name').textContent = data.name;
+      document.getElementById('age').textContent = data.age;
+      document.getElementById('gender').textContent = data.gender;
+      document.getElementById('contact').textContent = data.contact;
+      document.getElementById('date').textContent = data.date || new Date().toISOString().split('T')[0];
+      document.getElementById('orderNo').textContent = data.orderNo || 'AUTO';
+
+      document.getElementById('rsph').textContent = data.rightEye?.sph || '';
+      document.getElementById('rcyl').textContent = data.rightEye?.cyl || '';
+      document.getElementById('raxis').textContent = data.rightEye?.axis || '';
+      document.getElementById('radd').textContent = data.rightEye?.add || '';
+      document.getElementById('rvn').textContent = data.rightEye?.vn || '';
+
+      document.getElementById('lsph').textContent = data.leftEye?.sph || '';
+      document.getElementById('lcyl').textContent = data.leftEye?.cyl || '';
+      document.getElementById('laxis').textContent = data.leftEye?.axis || '';
+      document.getElementById('ladd').textContent = data.leftEye?.add || '';
+      document.getElementById('lvn').textContent = data.leftEye?.vn || '';
+
+      const table = document.getElementById('productTable');
+      let total = 0;
+      data.products?.forEach((item, i) => {
+        const row = table.insertRow();
+        row.insertCell().textContent = i + 1;
+        row.insertCell().textContent = item.name;
+        row.insertCell().textContent = item.quantity;
+        row.insertCell().textContent = `₹${item.price}`;
+        total += item.quantity * item.price;
+      });
+
+      document.getElementById('totalAmount').textContent = total;
+    }
+
+    function downloadPDF() {
+      const element = document.getElementById('receipt');
+      html2pdf().from(element).save("receipt.pdf");
+    }
+  </script>
+</body>
+</html>
